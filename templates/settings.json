@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git branch --show-current)", "Bash(git worktree list:*)",
+      "Bash(gh pr diff:*)", "Bash(gh pr view:*)", "Bash(gh pr list:*)", "Bash(gh pr comment:*)",
+      "Bash(./scripts/new_worktree.sh:*)",
+      "__VERIFIED_ALLOWS__"
+    ],
+    "deny": [
+      "Bash(git add -A*)", "Bash(git add --all*)", "Bash(git add .)", "Bash(git add -u*)", "Bash(git add --update*)",
+      "Bash(git push --force*)", "Bash(git push -f*)", "Bash(git push * --force*)", "Bash(git push * -f*)",
+      "Bash(git checkout .*)", "Bash(git restore .*)",
+      "__DESTRUCTIVE_DENIES__"
+    ]
+  }
+}
