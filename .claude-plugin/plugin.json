@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "ai-infra",
   "version": "0.1.2",
-  "description": "Scarred universal rules on every session, /init that generates a verified AGENTS.md + permissions + worktree script, /lesson that turns incidents into review traps and then into guards, an adversarial pr-reviewer, a codebase scout.",
+  "description": "Scarred universal rules on every session, /init that generates a verified AGENTS.md + permissions + worktree script, /lesson that turns incidents into review traps and then into guards, an adversarial pr-reviewer, a whole-codebase health-check, a codebase scout.",
   "author": {
     "name": "Ray Sears",
     "url": "https://github.com/raysears"
