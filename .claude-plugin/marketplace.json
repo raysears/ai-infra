@@ -1,8 +1,15 @@
 {
   "name": "raysears",
-  "owner": { "name": "Ray Sears" },
+  "owner": {
+    "name": "Ray Sears"
+  },
   "description": "Ray Sears' Claude Code plugins.",
   "plugins": [
-    { "name": "ai-infra", "source": "./", "description": "Universal rules, /init, /lesson, pr-reviewer, scout.", "category": "productivity" }
+    {
+      "name": "ai-infra",
+      "source": "./",
+      "description": "Universal rules, /init, /lesson, pr-reviewer, health-check, scout.",
+      "category": "productivity"
+    }
   ]
 }
