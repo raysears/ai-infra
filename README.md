@@ -24,7 +24,7 @@ Update with `claude plugin marketplace update raysears && claude plugin update a
 | **`/init`** | Detects language, package manager, test/lint/build commands and CI, then writes `AGENTS.md` (plus a `CLAUDE.md` symlink), `.claude/settings.json`, `scripts/new_worktree.sh` and git excludes. Every command is run once before it is written. |
 | **`/lesson`** | The only writer of `AGENTS.md`'s *Things that surprise people* and *Guards*. |
 | **`/handover`, `/grill-me`** | Session continuity, and an interview that stress-tests a plan before you build it. |
-| **Agents** | `scout` maps an unfamiliar repo into `.claude/state/MAP.md`. `pr-reviewer` reviews adversarially and never fixes or merges. |
+| **Agents** | `scout` maps an unfamiliar repo into `.claude/state/MAP.md`. `health-check` assesses a whole codebase and writes a verdict to `.claude/state/HEALTH.md`. `pr-reviewer` reviews a diff adversarially. None of the three fixes anything. |
 
 ## The loop
 
@@ -52,6 +52,9 @@ An install is a **copy** into `~/.claude/plugins/cache/`, and neither `install` 
 ```bash
 claude plugin uninstall ai-infra@raysears && claude plugin install ai-infra@raysears
 ```
+
+A newly added agent or skill is discovered at session start, so it will not appear in a session
+that was already running when you installed it. Restart to pick it up.
 
 Because it is a copy, an edit made there changes what runs while this repo stays clean and git stays silent. Run `bash scripts/selfcheck.sh` before every push: it diffs the cache against the repo and catches the frontmatter, hook and format mistakes that otherwise fail silently.
 
