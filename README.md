@@ -45,7 +45,7 @@ The promotion ladder, cheapest first:
 
 ## Developing
 
-`claude --plugin-dir /Users/raysears/Documents/dev/ai-infra` loads the working tree for one session.
+`claude --plugin-dir .` from a clone loads the working tree for one session, no install needed.
 
 An install is a COPY into `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`, and neither `install` nor `update` refreshes it at the same version: `install` answers "already installed", `update` answers "already at the latest version". Two ways to get an edit into the running copy, both verified:
 
