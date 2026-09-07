@@ -45,7 +45,17 @@ The promotion ladder, cheapest first:
 
 ## Developing
 
-`claude --plugin-dir /Users/raysears/Documents/dev/ai-infra` loads the working tree for one session. An install is a COPY into `~/.claude/plugins/cache`; edits reach an installed copy only after `claude plugin update`.
+`claude --plugin-dir /Users/raysears/Documents/dev/ai-infra` loads the working tree for one session.
+
+An install is a COPY into `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`, and neither `install` nor `update` refreshes it at the same version: `install` answers "already installed", `update` answers "already at the latest version". Two ways to get an edit into the running copy, both verified:
+
+```bash
+claude plugin uninstall ai-infra@raysears && claude plugin install ai-infra@raysears
+```
+
+or bump `version` in `.claude-plugin/plugin.json`, which is what `update` looks at. Prefer the version bump: it leaves a record of what changed and when.
+
+Because the cache is a copy, an edit made there changes what runs while this repo stays clean and git stays silent. That happened on 2026-09-07. `scripts/selfcheck.sh` check 13 now diffs the cache against this repo and fails on any difference.
 
 Smoke test:
 
@@ -54,6 +64,25 @@ claude -p --plugin-dir . --model haiku --allowedTools Bash --output-format json 
 ```
 
 Never run `claude plugin init` for this repo: it scaffolds into `~/.claude/skills/<name>/` and auto-loads next session.
+
+## Committing to the default branch
+
+The `PreToolUse` hook refuses `git commit` while you are on the default branch, because a commit made on a local `main` once rode unreviewed into a merged PR (2026-08-07). Make a branch, or use `scripts/new_worktree.sh`.
+
+A repo that deliberately has no PR flow (config, docs, scratch) opts out with a `.claude/allow-main` file at its root. The file must be **committed**: creating it, or staging it, does nothing. That is deliberate. An opt-out should arrive through a commit and a diff somebody can see, not be granted by an agent in the same command it was just blocked on.
+
+To opt a fresh repo out, commit the file on a branch and fast-forward:
+
+```bash
+git checkout -b allow-main-optout
+mkdir -p .claude && touch .claude/allow-main
+git add .claude/allow-main && git commit -m "opt out of the default-branch commit guard"
+git checkout main && git merge --ff-only allow-main-optout
+```
+
+A fast-forward merge runs no `git commit`, so the guard does not fire.
+
+None of this stops a determined agent; every hook is a file an agent can edit. It raises the cost of doing it by accident, and it makes doing it deliberately visible. The remote half of the same job is `scripts/protect-branch.sh`, which applies a GitHub ruleset requiring a pull request into the default branch. Rulesets are free on public repos and need Pro on private ones, and they cannot tell you apart from your agent, since both authenticate as the same account.
 
 ## Credits
 

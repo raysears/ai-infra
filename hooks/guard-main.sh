@@ -10,6 +10,18 @@ CWD=$(printf '%s' "$IN" | python3 -c 'import sys,json; print(json.load(sys.stdin
 # ponytail: honour a leading `cd <dir> &&`; anything fancier than that is out of scope for a speed bump.
 LEAD=$(printf '%s' "$CMD" | sed -nE 's/^[[:space:]]*cd[[:space:]]+"?([^"&;|[:space:]]+)"?[[:space:]]*&&.*/\1/p')
 [ -n "$LEAD" ] && CWD=$(cd "$CWD" 2>/dev/null && cd "$LEAD" 2>/dev/null && pwd)
+# Per-repo opt-out: a repo that deliberately has no PR flow (config, docs, scratch) skips
+# this guard with a .claude/allow-main file at its root.
+# The file must be COMMITTED, not merely present or staged: `touch` and `git add` both do
+# nothing. An opt-out therefore arrives through a commit and a diff somebody can see, rather
+# than one an agent grants itself mid-task in the same command it was blocked on.
+# Bootstrap: commit the file on a branch, then `git checkout main && git merge --ff-only
+# <branch>`. A fast-forward runs no `git commit`, so this guard does not fire.
+ROOT=$(git -C "${CWD:-.}" rev-parse --show-toplevel 2>/dev/null)
+if [ -n "$ROOT" ] && [ -f "$ROOT/.claude/allow-main" ] \
+   && git -C "$ROOT" cat-file -e HEAD:.claude/allow-main 2>/dev/null; then
+  exit 0
+fi
 BR=$(git -C "${CWD:-.}" branch --show-current 2>/dev/null) || exit 0
 DEF=$(git -C "${CWD:-.}" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
 if [ -n "$BR" ] && { [ "$BR" = "${DEF:-main}" ] || [ "$BR" = main ] || [ "$BR" = master ]; }; then

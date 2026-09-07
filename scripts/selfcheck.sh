@@ -129,4 +129,22 @@ for b in (fmt, env, init):
 PY
 ok "bullet trailer agrees (lesson, AGENTS.md template, test_docs.py)"
 
+# 13. Cache drift: an installed plugin is a COPY, so an edit to the cache changes what actually
+# runs while the repo stays clean and git stays silent. That happened once (2026-09-07: another
+# agent added the allow-main opt-out to the cache, not here, where the next reinstall would have
+# deleted it). Compare the repo against the cache of the version this repo declares; any other
+# version is a stale install, not drift.
+VER=$(python3 -c 'import json;print(json.load(open(".claude-plugin/plugin.json"))["version"])')
+MKT=$(python3 -c 'import json;print(json.load(open(".claude-plugin/marketplace.json"))["name"])')
+CACHE="$HOME/.claude/plugins/cache/$MKT/$(python3 -c 'import json;print(json.load(open(".claude-plugin/plugin.json"))["name"])')/$VER"
+if [ -d "$CACHE" ]; then
+  diff -rq "$CACHE" . -x .git -x .in_use >"$TMP/drift" 2>&1 \
+    || fail "the installed copy at $VER differs from this repo, so what runs is not what is committed.
+Re-sync: claude plugin uninstall ai-infra@$MKT && claude plugin install ai-infra@$MKT
+$(cat "$TMP/drift")"
+  ok "cache matches repo ($VER)"
+else
+  ok "cache drift (not installed at $VER; nothing to compare)"
+fi
+
 echo "selfcheck: all green"
