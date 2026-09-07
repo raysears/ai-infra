@@ -74,6 +74,12 @@ write**: it says this would be the worst item here if true, and nobody has check
 credential is Critical whether or not you proved the key is live. What is uncertain is your
 confidence, never the consequence.
 
+**SUSPECTED is for what you could not establish, never for what you did not try.** If a cheap
+check would settle it, run the check. Grepping a pattern and shipping `Critical / SUSPECTED`
+without opening the file is the filler this file's headline rule bans, wearing a severity
+label. The test: could you have settled this in under five minutes with the tools you hold? If
+yes, it is not SUSPECTED, it is unfinished.
+
 Two things that are severity inputs, not confidence ones, because they change the consequence:
 
 - **Reachability.** Dead code, a commented-out call site, a flag that is off: the likelihood
@@ -96,7 +102,7 @@ Run what exists; note what is absent rather than guessing at it. All read-only.
 | Does the suite pass, and how long | The project's own TEST command. See **Before you run a project command** below; never run one unread |
 | What the linter already catches | The project's own LINT command, same gate. A `lint` script is very often `--fix`, which writes |
 | Coverage, if configured | The project's coverage command, same gate. Configured but never invoked counts as absent, per the enforcement rule above; no coverage tooling at all is worth one line, not a finding |
-| Secrets in the working tree | `git grep -lIE` for key-shaped patterns. **`-l`, never `-n`**: `-n` prints the whole matching line, value included, which is the leak forbidden below. Names first, then open a named file with Read if you must classify the credential. Confirm `.gitignore` covers env files. |
+| Secrets in the working tree | `git grep -lIE --untracked` for key-shaped patterns. **`-l`, never `-n`**: `-n` prints the whole matching line, value included, which is the leak forbidden below. **`--untracked` is load-bearing**: without it git greps tracked files only, so an uncommitted `config/prod.env` full of live keys is invisible to a check whose whole subject is the working tree. Verified. Classify from the filename and the pattern that matched; if you genuinely must open the file, read it and write about it without ever reproducing the value. Confirm `.gitignore` covers env files. |
 | Secrets in history | `git log --oneline -G'<regex>' --all`. **`-G`, not `-S`**: `-S` is a literal-string pickaxe, so handing it the regex from the row above returns empty on a repo that does have the secret, and exits 0. Verified. **No `-p`**, which prints the secret verbatim into your transcript. Name the commits; never show their contents. Then a positive control **using a regex, not a plain string**: re-run with a pattern you know matches something committed. A literal control passes while a regex query is broken, so it proves nothing about the query you actually ran. If `command -v gitleaks` resolves, `gitleaks detect` is better than all of this; if not, say so under *Not checked* rather than installing it. |
 | Churn hotspots | `git log --format= --name-only \| sort \| uniq -c \| sort -rn \| head -20` |
 | Stale or abandoned areas | `git log -1 --format=%ar` on the largest files |
@@ -112,9 +118,12 @@ So, every time, in this order:
 
 1. **Get the repo's own destructive list first**, because it outranks your judgement.
    `AGENTS.md`'s Guards table if one exists, otherwise run
-   `bash "$CLAUDE_PLUGIN_ROOT/scripts/detect.sh"` and read its `DESTRUCTIVE=` lines. That
-   detector needs no `/init` and works on any repo, which is exactly the inherited codebase
-   this agent exists for.
+   `bash "$CLAUDE_PLUGIN_ROOT/scripts/detect.sh"`; if `$CLAUDE_PLUGIN_ROOT` is unset in the
+   Bash tool, which it often is, `ls -d ~/.claude/plugins/cache/raysears/ai-infra/*/ | tail -1`
+   locates the plugin. Read its `DESTRUCTIVE=` lines, and check it printed `DETECT_OK=1`: a
+   detector that crashed prints no `DESTRUCTIVE=` at all, which reads identically to a repo
+   with nothing destructive in it. That detector needs no `/init` and works on any repo, which
+   is exactly the inherited codebase this agent exists for.
 2. **Resolve the command to its leaves.** A `package.json` script, `Makefile` target or
    `justfile` recipe is one hop. Follow it: `"test": "./scripts/test.sh"` hides everything in
    the shell script, `npm-run-all -s clean test` hides two more, `pre`/`post` hooks fire
@@ -131,10 +140,12 @@ So, every time, in this order:
    (2026-08-25).
 5. **Never against production credentials.** If `.env` points at something live, the tests do
    too. Say so and skip.
-6. **Prove you changed nothing.** `git status --porcelain` before and after every project
-   command, and report any delta as a finding against yourself. Tokens do not catch side
-   effects: `pytest` leaves `.pytest_cache/` and `__pycache__/`, `jest` writes snapshots on
-   first run, and a coverage command produces a file by definition. This step is what enforces
+6. **Prove you changed nothing.** `git status --porcelain --ignored` before and after every
+   project command, and report any delta as a finding against yourself. **`--ignored` is
+   load-bearing**: the three artefacts that make this step necessary, `__pycache__/`,
+   `.pytest_cache/` and `.coverage`, are gitignored in every normal repo, so plain
+   `--porcelain` reports a clean tree while they pile up. Verified. `jest` writes snapshots on
+   first run and a coverage command produces a file by definition. This step is what enforces
    the paragraph above; the token list only makes it cheaper.
 
 If dependencies are not installed, that is a line in *Not checked, and why*. Installing them is
